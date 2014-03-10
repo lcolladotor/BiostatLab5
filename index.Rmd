@@ -15,7 +15,7 @@ assets:
 
 ```{r setup, echo = F, cache = F}
 require("knitr")
-opts_chunk$set(tidy=TRUE, width=50, echo=FALSE, tidy.opts=list(width.cutoff=50))
+opts_chunk$set(tidy=TRUE, width=50, echo=FALSE, tidy.opts=list(width.cutoff=50), message=FALSE)
 ```
 
 
@@ -46,7 +46,7 @@ mycitep <- function(x, short=NULL, year=substr(date(), 21, 24), tooltip=TRUE) {
 # mycitep("https://github.com/lcolladotor/lcollado753", "Collado, 2013")
 ```
 ```{r bibsetup, echo=FALSE, message=FALSE, warning=FALSE}
-write.bibtex(c("knitcitations" = citation("knitcitations"), "slidify" = citation("slidify")), file = "pkgs.bib")
+write.bibtex(c("knitcitations" = citation("knitcitations"), "slidify" = citation("slidify"), "lme4" = citation("lme4")), file = "pkgs.bib")
 bib <- read.bibtex("pkgs.bib")
 ```
 
@@ -95,13 +95,223 @@ $$ \int_{-\infty}^{\infty} h(v)e^{-v^{2}}dv \approx \sum_{k=1}^{d}h(x_{k})w_{k} 
 * But computational burden increases with quadrature points, and grows exponentially with the number of random effects
 
 
-## Simulation
+## Quadrature exploration results
 
+The `lme4` package includes the function `glmer` to fit GLMMs. For the purpose of this analysis, the `nAGQ` argument is the most important one.
+
+```{r nAGQ, results="asis"}
+## Show the description of the nAGQ argument
+library("gbRd")
+cat(Rdo_args2txt("glmer", "nAGQ"))
+
+```
+
+
+
+### Contagious bovine pleuropneumonia
+
+The `lme4` package includes the `cbpp` dataset which is described below:
+
+
+```{r "cbpp", results="asis"}
+## Show the cbpp dataset description
+cat(paste(Rd_help2txt("cbpp", keep_section="\\description", omit_sec_header=TRUE), collapse="\n"))
+
+```
+
+#### EDA
+
+A quick exploration of the data set is shown below. In particular, we could be interested in the probability of serological cases by considering a random intercept by herd.
+
+```{r "cbppExplore"}
+## Explore the cbpp dataset
+summary(cbpp)
+
+## Incidence/size vs period by herd
+library("ggplot2")
+eda1 <- ggplot(cbpp, aes(x=period, y=incidence/size, group=1)) + geom_point() + geom_line() + facet_grid( . ~ herd)
+eda1
+
+```
+
+In the above plot we can see that the probability (number of events _incidence_ divided by the herd _size_) of serological events does change by herd.
+
+
+#### Estimates vs quadrature points
+
+We can now explore the results for 
+* `nAGQ = 0` which estimates the coefficients in the penalized iteratively reweighted least squares step
+* `nAGQ = 1` which is the equivalent to using the Laplace approximation
+* `nAGQ = 2, 3, 4, 5, 10, 15, 20, 25` which specify different numbers of quadrature points. Note that the maximum `glmer` allows is 25.
+
+
+The next plot shows how the resulting estimates for each of the coefficients changes by the `nAGQ` value. Estimates are shown with +- standard error bands. In this case, it stabilizes very quickly with the only noticeable different results being for `nAGQ = 0`.
+
+```{r "cbppEst"}
+## Get the results for different nAGQ values
+library("reshape2")
+quadrature <- function(formula, data) {
+	## Results place holder
+	res <- vector("list", 10)
+	names(res) <- c(0:5, 10, 15, 20, 25)
+	aictab <- res
+	for(i in names(res)) {
+		j <- as.integer(i)
+		## Fit GLMM
+		fit <- glmer(formula, data=data, family=binomial, nAGQ=j)
+
+		## Extract coefficients and criterion values
+		tmp <- summary(fit)$coefficients
+		res[[i]] <- data.frame(cbind(tmp, nAGQ=rep(j, nrow(tmp))), check.names=FALSE)
+		res[[i]]$coef <- rownames(tmp)
+		rownames(res[[i]]) <- NULL
+		aictab[[i]] <- c(summary(fit)$AICtab, nAGQ=j)
+	}
+	
+	## Format results and get them ready for plotting
+	res <- do.call(rbind, res)
+	colnames(res) <- c("Estimate", "SE", "Zval", "Pval", "nAGQ", "coef")
+	aictab <- data.frame(do.call(rbind, aictab))
+	aictab <- melt(aictab, id="nAGQ")
+	
+	## Finish
+	final <- list(coef=res, aictab=aictab)
+	return(final)
+}
+
+## Get the results for the cbpp data
+cbpp.res <- quadrature("cbind(incidence, size - incidence) ~ period + (1 | herd)", data=cbpp)
+
+## Estimates (with SE) vs nAGQ by coefficient
+p1 <- ggplot(cbpp.res$coef, aes(x=nAGQ, y=Estimate, group=1)) + geom_point() + geom_line() + facet_grid( . ~ coef) + geom_ribbon(aes(ymin=Estimate- 1.96 * SE, ymax= Estimate + 1.96 * SE), alpha=0.2)
+p1
+
+```
+
+#### P-values vs quadrature points
+
+This plot shows the p-values for the coefficients by the different `nAGQ` values. The results from the previous plot are reflected in this one.
+
+```{r "cbppPval"}
+## Pvalues vs nAGQ by coefficient
+p2 <- ggplot(cbpp.res$coef, aes(x=nAGQ, y=- log10(Pval), group=1)) + geom_point() + geom_line() + facet_grid( . ~ coef) + geom_hline(aes(yintercept=-log10(0.05)), colour="#BB0000", linetype="dashed")
+p2
+
+```
+
+#### Criterions vs quadrature points
+
+This plot shows the AIC and BIC criterions as well as the deviance ($-2 * \text{logLikelihood}$) for each of the `nAGQ` values. Compared to the previous results, we note a very large difference between values 1 and 2. The documentation for `glmer` states that using `nAGQ=9` provides a better evaluation of the deviance (meaning the log likelihood and thus the deviance, AIC and BIC).
+
+```{r "cbppAIC"}
+## Criterions vs nAGQ
+p3 <- ggplot(subset(cbpp.res$aictab, variable != "logLik"), aes(x=nAGQ, y=value)) + geom_point() + geom_line() + facet_grid( . ~ variable) + ylab("")
+p3
+
+```
+
+#### Conclusions
+
+With the `cbpp` dataset we can notice how using different `nAGQ` values can affect your estimates. Because of the model specification and dataset size, in this case there is nearly no computation burden for increasing the `nAGQ` values and you gain better deviance estimates.
+
+
+
+### Two treatments for toe-nail infection
+
+The data from `r mycitep("10.1111/1467-9876.00237")` is available [online](http://www.blackwellpublishers.co.uk/rss/). The researchers were interested in the degree of onycholysis which is related to the degree of separation of the nail plate from the nail-bed. The following shows a basic exploration of the available data.
+
+
+
+```{r "getData", eval=FALSE}
+## The data is available at 
+## http://onlinelibrary.wiley.com/journal/10.1111/(ISSN)1467-9876/homepage/50_3.htm
+download.file("http://onlinelibrary.wiley.com/store/10.1111/(ISSN)1467-9876/asset/homepages/C4827r.txt?v=1&s=173f4c2fb8340abfc68445b88a6f6eadeb2c68ee&isAguDoi=false", "C4827r.txt")
+
+```
+
+```{r "loadData"}
+## Read the data
+c48 <- read.table("C4827r.txt", col.names=c("idnr", "y", "trt", "time", "visit"),
+	colClasses=c("integer", "integer", "factor", "numeric", "factor"))
+	
+## Basic exploration
+summary(c48)
+
+## Basic EDA
+eda2 <- ggplot(c48, aes(x=time, y=y, group=1)) +  geom_point(position=position_jitter(height=0.06), alpha=1/5, shape=21, size=1.2) + stat_smooth(method=loess) + stat_smooth(method=glm, family=binomial, colour="red") + ylab("0 (no or mild) vs 1 (moderate or severe)") + facet_grid(. ~ trt) 
+eda2
+
+```
+
+The previous plot shows whether the subjects had no or mild (0) versus moderate and severe (1) onycholysis. Two treatments (0 and 1) are compared against each other and subjects were observed up to 7 visits (there is some loss to follow-up). Y axis values are jittered to reduce overplotting. Red line is the fitted logistic regression while the blue line is the loess curve; both include their spreads.
+
+The model explored was
+
+$$ \text{logit}\{P(Y_{ij} = 1 | b_i, \beta)\} = \beta_0 + \beta_1 \text{treatment}_i + \beta_2 t_{ij} + \beta_3 t_{ij} \times \text{treatment}_i + \beta_i $$
+
+where
+
+* $Y_{ij}$ is the binary response at the $j$th visit of the $i$th subject
+* $i = 1, \ldots, N$
+* $j = 1, \ldots, n_i$
+* $b_i = \sigma z_i$
+* $z_i \sim N(0, 1)$
+
+#### Estimates vs quadrature points
+
+We can now explore the results for different numbers of quadrature points just like we did before. The next plot shows how the resulting estimates for each of the coefficients changes by the `nAGQ` value. Estimates are shown with +- standard error bands. 
+
+In this dataset, the results are much more unstable (specially the intercept and treatment coefficients) for low values of `nAGQ`.
+
+```{r "c48Est"}
+## Get the results for the c48 data
+c48.res <- quadrature("y ~ trt * time + (1 | idnr)", data=c48)
+
+## Estimates (with SE) vs nAGQ by coefficient
+p4 <- ggplot(c48.res$coef, aes(x=nAGQ, y=Estimate, group=1)) + geom_point() + geom_line() + facet_grid( . ~ coef) + geom_ribbon(aes(ymin=Estimate- 1.96 * SE, ymax= Estimate + 1.96 * SE), alpha=0.2)
+p4
+
+```
+
+#### P-values vs quadrature points
+
+This plot shows the p-values for the coefficients by the different `nAGQ` values. In contrast to the previous plot, we can observe how much the p-value for the _time_ coefficient is much more variable at low `nAGQ` values than the p-value for the treatment coefficient. It is also very important to note how the p-value for the interaction coefficient is not significant at the 0.05 confidence level for low `nAGQ` values.
+
+```{r "c48val"}
+## Pvalues vs nAGQ by coefficient
+p5 <- ggplot(c48.res$coef, aes(x=nAGQ, y=- log10(Pval), group=1)) + geom_point() + geom_line() + facet_grid( . ~ coef) + geom_hline(aes(yintercept=-log10(0.05)), colour="#BB0000", linetype="dashed")
+p5
+
+```
+
+#### Criterions vs quadrature points
+
+This plot shows the AIC and BIC criterions as well as the deviance ($-2 * \text{logLikelihood}$) for each of the `nAGQ` values. As in the `cbpp` dataset, the log likelihood is very variable for low `nAGQ` values. The results are similar to the previously published results`r mycitep("10.1111/1467-9876.00237")` when they use NLMIXED with the adaptive method.
+
+```{r "c48AIC"}
+## Criterions vs nAGQ
+p6 <- ggplot(subset(c48.res$aictab, variable != "logLik"), aes(x=nAGQ, y=value)) + geom_point() + geom_line() + facet_grid( . ~ variable) + ylab("")
+p6
+
+```
+
+```{r "save"}
+## Save the plots for using them in the presentation
+save(p1, p2, p3, p4, p5, p6, file="plots.Rdata")
+
+```
+
+
+#### Conclusions
+
+While the model structure was very similar to the `cbpp` dataset, the data itself presented a stronger challenge to the GLMM fitting methods due to the log likelihood surface `r mycitep("10.1111/1467-9876.00237")`. Thus, if you fitted a GLMM assuming that the default number of quadrature points was enough, you would have gotten widely different results from the more numerically stable results from higher `nAGQ` values. It is thus important to check your results with higher `nAGQ` values.
+
+Compared to the `cbpp` dataset, increasing the `nAGQ` value did lead to longer computing times but it was still very negligible. However, as stated in the `glmer` documentation, more complicated models will require much more computing power.
 
 
 ## References
 
-Web document generated using `slidify` `r mycitep(bib[["slidify"]])`. Citations made with `knitcitations` `r mycitep(bib[["knitcitations"]], "Boettiger, 2013")`. 
+Web document generated using `slidify` `r mycitep(bib[["slidify"]])`. Citations made with `knitcitations` `r mycitep(bib[["knitcitations"]], "Boettiger, 2013")`. The presentation was made using `ShareLatex` `r mycitep("https://www.sharelatex.com/", "Oswald and Allen")`.
 
 
 ```{r bibliography, results='asis', echo=FALSE, cache=FALSE}
@@ -114,6 +324,17 @@ bibliography()
 ## R code
 
 ```{r "code", echo=TRUE, eval=FALSE}
+<<nAGQ>>
+<<cbpp>>
+<<cbppExplore>>
+<<cbppEst>>
+<<cbppPval>>
+<<cbppAIC>>
+<<getData>>
+<<loadData>>
+<<c48Est>>
+<<c48Pval>>
+<<c48AIC>>
 ```
 
 ## Reproducibility

@@ -96,13 +96,149 @@ Consider different integration methods.
 <li>But computational burden increases with quadrature points, and grows exponentially with the number of random effects</li>
 </ul>
 
-<h2>Simulation</h2>
+<h2>Quadrature exploration results</h2>
+
+<p>The <code>lme4</code> package includes the function <code>glmer</code> to fit GLMMs. For the purpose of this analysis, the <code>nAGQ</code> argument is the most important one.</p>
+
+<pre><code>nAGQ: integer scalar - the number of points per axis for evaluating
+      the adaptive Gauss-Hermite approximation to the
+      log-likelihood.  Defaults to 1, corresponding to the Laplace
+      approximation.  Values greater than 1 produce greater
+      accuracy in the evaluation of the log-likelihood at the
+      expense of speed.  A value of zero uses a faster but less
+      exact form of parameter estimation for GLMMs by optimizing
+      the random effects and the fixed-effects coefficients in the
+      penalized iteratively reweighted least squares step.
+</code></pre>
+
+<h3>Contagious bovine pleuropneumonia</h3>
+
+<p>The <code>lme4</code> package includes the <code>cbpp</code> dataset which is described below:</p>
+
+<pre><code> Contagious bovine pleuropneumonia (CBPP) is a major disease of
+ cattle in Africa, caused by a mycoplasma.  This dataset describes
+ the serological incidence of CBPP in zebu cattle during a
+ follow-up survey implemented in 15 commercial herds located in the
+ Boji district of Ethiopia.  The goal of the survey was to study
+ the within-herd spread of CBPP in newly infected herds. Blood
+ samples were quarterly collected from all animals of these herds
+ to determine their CBPP status.  These data were used to compute
+ the serological incidence of CBPP (new cases occurring during a
+ given time period).  Some data are missing (lost to follow-up).
+</code></pre>
+
+<h4>EDA</h4>
+
+<p>A quick exploration of the data set is shown below. In particular, we could be interested in the probability of serological cases by considering a random intercept by herd.</p>
+
+<pre><code>##       herd      incidence          size      period
+##  1      : 4   Min.   : 0.00   Min.   : 2.0   1:15  
+##  3      : 4   1st Qu.: 0.00   1st Qu.: 9.0   2:14  
+##  4      : 4   Median : 1.00   Median :16.0   3:14  
+##  5      : 4   Mean   : 1.77   Mean   :15.0   4:13  
+##  6      : 4   3rd Qu.: 2.00   3rd Qu.:21.2         
+##  7      : 4   Max.   :12.00   Max.   :34.0         
+##  (Other):32
+</code></pre>
+
+<p><img src="assets/fig/cbppExplore.png" alt="plot of chunk cbppExplore"> </p>
+
+<p>In the above plot we can see that the probability (number of events <em>incidence</em> divided by the herd <em>size</em>) of serological events does change by herd.</p>
+
+<h4>Estimates vs quadrature points</h4>
+
+<p>We can now explore the results for </p>
+
+<ul>
+<li><code>nAGQ = 0</code> which estimates the coefficients in the penalized iteratively reweighted least squares step</li>
+<li><code>nAGQ = 1</code> which is the equivalent to using the Laplace approximation</li>
+<li><code>nAGQ = 2, 3, 4, 5, 10, 15, 20, 25</code> which specify different numbers of quadrature points. Note that the maximum <code>glmer</code> allows is 25.</li>
+</ul>
+
+<p>The next plot shows how the resulting estimates for each of the coefficients changes by the <code>nAGQ</code> value. Estimates are shown with +- standard error bands. In this case, it stabilizes very quickly with the only noticeable different results being for <code>nAGQ = 0</code>.</p>
+
+<p><img src="assets/fig/cbppEst.png" alt="plot of chunk cbppEst"> </p>
+
+<h4>P-values vs quadrature points</h4>
+
+<p>This plot shows the p-values for the coefficients by the different <code>nAGQ</code> values. The results from the previous plot are reflected in this one.</p>
+
+<p><img src="assets/fig/cbppPval.png" alt="plot of chunk cbppPval"> </p>
+
+<h4>Criterions vs quadrature points</h4>
+
+<p>This plot shows the AIC and BIC criterions as well as the deviance (\(-2 * \text{logLikelihood}\)) for each of the <code>nAGQ</code> values. Compared to the previous results, we note a very large difference between values 1 and 2. The documentation for <code>glmer</code> states that using <code>nAGQ=9</code> provides a better evaluation of the deviance (meaning the log likelihood and thus the deviance, AIC and BIC).</p>
+
+<p><img src="assets/fig/cbppAIC.png" alt="plot of chunk cbppAIC"> </p>
+
+<h4>Conclusions</h4>
+
+<p>With the <code>cbpp</code> dataset we can notice how using different <code>nAGQ</code> values can affect your estimates. Because of the model specification and dataset size, in this case there is nearly no computation burden for increasing the <code>nAGQ</code> values and you gain better deviance estimates.</p>
+
+<h3>Two treatments for toe-nail infection</h3>
+
+<p>The data from (<span class="showtooltip" title="Lesaffre E and Spiessens B (2001). 'on The Effect of The Number of Quadrature Points in A Logistic Random Effects Model: an Example.' Journal of The Royal Statistical Society: Series C (Applied Statistics), 50, pp. 325-335. ISSN 0035-9254."><a href="http://dx.doi.org/10.1111/1467-9876.00237">Lesaffre &amp; Spiessens, 2001</a></span>) is available <a href="http://www.blackwellpublishers.co.uk/rss/">online</a>. The researchers were interested in the degree of onycholysis which is related to the degree of separation of the nail plate from the nail-bed. The following shows a basic exploration of the available data.</p>
+
+<pre><code>##       idnr           y         trt          time       visit  
+##  Min.   :  1   Min.   :0.000   0:937   Min.   : 0.00   1:294  
+##  1st Qu.:102   1st Qu.:0.000   1:971   1st Qu.: 1.00   2:288  
+##  Median :192   Median :0.000           Median : 3.00   3:283  
+##  Mean   :190   Mean   :0.214           Mean   : 4.69   4:272  
+##  3rd Qu.:276   3rd Qu.:0.000           3rd Qu.: 8.89   5:263  
+##  Max.   :383   Max.   :1.000           Max.   :18.50   6:244  
+##                                                        7:264
+</code></pre>
+
+<p><img src="assets/fig/loadData.png" alt="plot of chunk loadData"> </p>
+
+<p>The previous plot shows whether the subjects had no or mild (0) versus moderate and severe (1) onycholysis. Two treatments (0 and 1) are compared against each other and subjects were observed up to 7 visits (there is some loss to follow-up). Y axis values are jittered to reduce overplotting. Red line is the fitted logistic regression while the blue line is the loess curve; both include their spreads.</p>
+
+<p>The model explored was</p>
+
+<p>\[ \text{logit}\{P(Y_{ij} = 1 | b_i, \beta)\} = \beta_0 + \beta_1 \text{treatment}_i + \beta_2 t_{ij} + \beta_3 t_{ij} \times \text{treatment}_i + \beta_i \]</p>
+
+<p>where</p>
+
+<ul>
+<li>\(Y_{ij}\) is the binary response at the $j$th visit of the $i$th subject</li>
+<li>\(i = 1, \ldots, N\)</li>
+<li>\(j = 1, \ldots, n_i\)</li>
+<li>\(b_i = \sigma z_i\)</li>
+<li>\(z_i \sim N(0, 1)\)</li>
+</ul>
+
+<h4>Estimates vs quadrature points</h4>
+
+<p>We can now explore the results for different numbers of quadrature points just like we did before. The next plot shows how the resulting estimates for each of the coefficients changes by the <code>nAGQ</code> value. Estimates are shown with +- standard error bands. </p>
+
+<p>In this dataset, the results are much more unstable (specially the intercept and treatment coefficients) for low values of <code>nAGQ</code>.</p>
+
+<p><img src="assets/fig/c48Est.png" alt="plot of chunk c48Est"> </p>
+
+<h4>P-values vs quadrature points</h4>
+
+<p>This plot shows the p-values for the coefficients by the different <code>nAGQ</code> values. In contrast to the previous plot, we can observe how much the p-value for the <em>time</em> coefficient is much more variable at low <code>nAGQ</code> values than the p-value for the treatment coefficient. It is also very important to note how the p-value for the interaction coefficient is not significant at the 0.05 confidence level for low <code>nAGQ</code> values.</p>
+
+<p><img src="assets/fig/c48val.png" alt="plot of chunk c48val"> </p>
+
+<h4>Criterions vs quadrature points</h4>
+
+<p>This plot shows the AIC and BIC criterions as well as the deviance (\(-2 * \text{logLikelihood}\)) for each of the <code>nAGQ</code> values. As in the <code>cbpp</code> dataset, the log likelihood is very variable for low <code>nAGQ</code> values. The results are similar to the previously published results(<span class="showtooltip" title="Lesaffre E and Spiessens B (2001). 'on The Effect of The Number of Quadrature Points in A Logistic Random Effects Model: an Example.' Journal of The Royal Statistical Society: Series C (Applied Statistics), 50, pp. 325-335. ISSN 0035-9254."><a href="http://dx.doi.org/10.1111/1467-9876.00237">Lesaffre &amp; Spiessens, 2001</a></span>) when they use NLMIXED with the adaptive method.</p>
+
+<p><img src="assets/fig/c48AIC.png" alt="plot of chunk c48AIC"> </p>
+
+<h4>Conclusions</h4>
+
+<p>While the model structure was very similar to the <code>cbpp</code> dataset, the data itself presented a stronger challenge to the GLMM fitting methods due to the log likelihood surface (<span class="showtooltip" title="Lesaffre E and Spiessens B (2001). 'on The Effect of The Number of Quadrature Points in A Logistic Random Effects Model: an Example.' Journal of The Royal Statistical Society: Series C (Applied Statistics), 50, pp. 325-335. ISSN 0035-9254."><a href="http://dx.doi.org/10.1111/1467-9876.00237">Lesaffre &amp; Spiessens, 2001</a></span>). Thus, if you fitted a GLMM assuming that the default number of quadrature points was enough, you would have gotten widely different results from the more numerically stable results from higher <code>nAGQ</code> values. It is thus important to check your results with higher <code>nAGQ</code> values.</p>
+
+<p>Compared to the <code>cbpp</code> dataset, increasing the <code>nAGQ</code> value did lead to longer computing times but it was still very negligible. However, as stated in the <code>glmer</code> documentation, more complicated models will require much more computing power.</p>
 
 <h2>References</h2>
 
-<p>Web document generated using <code>slidify</code> (<span class="showtooltip" title="Vaidyanathan R (2012). slidify: Generate reproducible html5 slides from R markdown. R package version 0.4."><a href="http://ramnathv.github.com/slidify/">Vaidyanathan, 2012</a></span>). Citations made with <code>knitcitations</code> (<span class="showtooltip" title="Boettiger C (2014). knitcitations: Citations for knitr markdown files. R package version 0.5-0."><a href="http://CRAN.R-project.org/package=knitcitations">Boettiger, 2014</a></span>). </p>
+<p>Web document generated using <code>slidify</code> (<span class="showtooltip" title="Vaidyanathan R (2012). slidify: Generate reproducible html5 slides from R markdown. R package version 0.4."><a href="http://ramnathv.github.com/slidify/">Vaidyanathan, 2012</a></span>). Citations made with <code>knitcitations</code> (<span class="showtooltip" title="Boettiger C (2014). knitcitations: Citations for knitr markdown files. R package version 0.5-0."><a href="http://CRAN.R-project.org/package=knitcitations">Boettiger, 2014</a></span>). The presentation was made using <code>ShareLatex</code> (<span class="showtooltip" title="(2014). 'Online LaTeX Editor ShareLaTeX - ShareLaTeX.com.' ."><a href="https://www.sharelatex.com/">Oswald and Allen</a></span>).</p>
 
 <ul>
+<li> Online LaTeX Editor ShareLaTeX - ShareLaTeX.com.  <a href="https://www.sharelatex.com/">https://www.sharelatex.com/</a></li>
 <li>Carl Boettiger,   (2014) knitcitations: Citations for knitr markdown files.  <a href="http://CRAN.R-project.org/package=knitcitations">http://CRAN.R-project.org/package=knitcitations</a></li>
 <li>Emmanuel Lesaffre, Bart Spiessens,   (2001) on The Effect of The Number of Quadrature Points in A Logistic Random Effects Model: an Example.  <em>Journal of The Royal Statistical Society: Series C (Applied Statistics)</em>  <strong>50</strong>  325-335  <a href="http://dx.doi.org/10.1111/1467-9876.00237">10.1111/1467-9876.00237</a></li>
 <li>Ramnath Vaidyanathan,   (2012) slidify: Generate reproducible html5 slides from R markdown.  <a href="http://ramnathv.github.com/slidify/">http://ramnathv.github.com/slidify/</a></li>
@@ -110,11 +246,129 @@ Consider different integration methods.
 
 <h2>R code</h2>
 
+<pre><code class="r">## Show the description of the nAGQ argument
+library(&quot;gbRd&quot;)
+cat(Rdo_args2txt(&quot;glmer&quot;, &quot;nAGQ&quot;))
+
+## Show the cbpp dataset description
+cat(paste(Rd_help2txt(&quot;cbpp&quot;, keep_section = &quot;\\description&quot;, 
+    omit_sec_header = TRUE), collapse = &quot;\n&quot;))
+
+## Explore the cbpp dataset
+summary(cbpp)
+
+## Incidence/size vs period by herd
+library(&quot;ggplot2&quot;)
+eda1 &lt;- ggplot(cbpp, aes(x = period, y = incidence/size, 
+    group = 1)) + geom_point() + geom_line() + facet_grid(. ~ 
+    herd)
+eda1
+
+## Get the results for different nAGQ values
+library(&quot;reshape2&quot;)
+quadrature &lt;- function(formula, data) {
+    ## Results place holder
+    res &lt;- vector(&quot;list&quot;, 10)
+    names(res) &lt;- c(0:5, 10, 15, 20, 25)
+    aictab &lt;- res
+    for (i in names(res)) {
+        j &lt;- as.integer(i)
+        ## Fit GLMM
+        fit &lt;- glmer(formula, data = data, family = binomial, 
+            nAGQ = j)
+
+        ## Extract coefficients and criterion values
+        tmp &lt;- summary(fit)$coefficients
+        res[[i]] &lt;- data.frame(cbind(tmp, nAGQ = rep(j, 
+            nrow(tmp))), check.names = FALSE)
+        res[[i]]$coef &lt;- rownames(tmp)
+        rownames(res[[i]]) &lt;- NULL
+        aictab[[i]] &lt;- c(summary(fit)$AICtab, nAGQ = j)
+    }
+
+    ## Format results and get them ready for plotting
+    res &lt;- do.call(rbind, res)
+    colnames(res) &lt;- c(&quot;Estimate&quot;, &quot;SE&quot;, &quot;Zval&quot;, &quot;Pval&quot;, 
+        &quot;nAGQ&quot;, &quot;coef&quot;)
+    aictab &lt;- data.frame(do.call(rbind, aictab))
+    aictab &lt;- melt(aictab, id = &quot;nAGQ&quot;)
+
+    ## Finish
+    final &lt;- list(coef = res, aictab = aictab)
+    return(final)
+}
+
+## Get the results for the cbpp data
+cbpp.res &lt;- quadrature(&quot;cbind(incidence, size - incidence) ~ period + (1 | herd)&quot;, 
+    data = cbpp)
+
+## Estimates (with SE) vs nAGQ by coefficient
+p1 &lt;- ggplot(cbpp.res$coef, aes(x = nAGQ, y = Estimate, 
+    group = 1)) + geom_point() + geom_line() + facet_grid(. ~ 
+    coef) + geom_ribbon(aes(ymin = Estimate - 1.96 * 
+    SE, ymax = Estimate + 1.96 * SE), alpha = 0.2)
+p1
+
+## Pvalues vs nAGQ by coefficient
+p2 &lt;- ggplot(cbpp.res$coef, aes(x = nAGQ, y = -log10(Pval), 
+    group = 1)) + geom_point() + geom_line() + facet_grid(. ~ 
+    coef) + geom_hline(aes(yintercept = -log10(0.05)), 
+    colour = &quot;#BB0000&quot;, linetype = &quot;dashed&quot;)
+p2
+
+## Criterions vs nAGQ
+p3 &lt;- ggplot(subset(cbpp.res$aictab, variable != &quot;logLik&quot;), 
+    aes(x = nAGQ, y = value)) + geom_point() + geom_line() + 
+    facet_grid(. ~ variable) + ylab(&quot;&quot;)
+p3
+
+## The data is available at
+## http://onlinelibrary.wiley.com/journal/10.1111/(ISSN)1467-9876/homepage/50_3.htm
+download.file(&quot;http://onlinelibrary.wiley.com/store/10.1111/(ISSN)1467-9876/asset/homepages/C4827r.txt?v=1&amp;s=173f4c2fb8340abfc68445b88a6f6eadeb2c68ee&amp;isAguDoi=false&quot;, 
+    &quot;C4827r.txt&quot;)
+
+## Read the data
+c48 &lt;- read.table(&quot;C4827r.txt&quot;, col.names = c(&quot;idnr&quot;, 
+    &quot;y&quot;, &quot;trt&quot;, &quot;time&quot;, &quot;visit&quot;), colClasses = c(&quot;integer&quot;, 
+    &quot;integer&quot;, &quot;factor&quot;, &quot;numeric&quot;, &quot;factor&quot;))
+
+## Basic exploration
+summary(c48)
+
+## Basic EDA
+eda2 &lt;- ggplot(c48, aes(x = time, y = y, group = 1)) + 
+    geom_point(position = position_jitter(height = 0.06), 
+        alpha = 1/5, shape = 21, size = 1.2) + stat_smooth(method = loess) + 
+    stat_smooth(method = glm, family = binomial, colour = &quot;red&quot;) + 
+    ylab(&quot;0 (no or mild) vs 1 (moderate or severe)&quot;) + 
+    facet_grid(. ~ trt)
+eda2
+
+## Get the results for the c48 data
+c48.res &lt;- quadrature(&quot;y ~ trt * time + (1 | idnr)&quot;, 
+    data = c48)
+
+## Estimates (with SE) vs nAGQ by coefficient
+p4 &lt;- ggplot(c48.res$coef, aes(x = nAGQ, y = Estimate, 
+    group = 1)) + geom_point() + geom_line() + facet_grid(. ~ 
+    coef) + geom_ribbon(aes(ymin = Estimate - 1.96 * 
+    SE, ymax = Estimate + 1.96 * SE), alpha = 0.2)
+p4
+
+
+## Criterions vs nAGQ
+p6 &lt;- ggplot(subset(c48.res$aictab, variable != &quot;logLik&quot;), 
+    aes(x = nAGQ, y = value)) + geom_point() + geom_line() + 
+    facet_grid(. ~ variable) + ylab(&quot;&quot;)
+p6
+
+</code></pre>
+
 <h2>Reproducibility</h2>
 
 <p>This report was last updated on</p>
 
-<pre><code>## [1] &quot;2014-03-09 20:46:21 EDT&quot;
+<pre><code>## [1] &quot;2014-03-10 00:34:21 EDT&quot;
 </code></pre>
 
 <p>R session information:</p>
@@ -126,19 +380,25 @@ Consider different integration methods.
 ## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
 ## 
 ## attached base packages:
-## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## [1] tools     stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
 ## 
 ## other attached packages:
-## [1] knitcitations_0.5-0 bibtex_0.3-6        knitr_1.5          
-## [4] slidify_0.4         lme4_1.0-6          Matrix_1.1-2-2     
-## [7] lattice_0.20-23    
+##  [1] reshape2_1.2.2      ggplot2_0.9.3.1     gbRd_0.4-11        
+##  [4] knitcitations_0.5-0 bibtex_0.3-6        knitr_1.5          
+##  [7] slidify_0.4         lme4_1.0-6          Matrix_1.1-2-2     
+## [10] lattice_0.20-23    
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] codetools_0.2-8 digest_0.6.4    evaluate_0.5.1  formatR_0.10   
-##  [5] grid_3.0.2      httr_0.2        markdown_0.6.4  MASS_7.3-29    
-##  [9] minqa_1.2.3     nlme_3.1-111    Rcpp_0.11.0     RCurl_1.95-4.1 
-## [13] splines_3.0.2   stringr_0.6.2   tools_3.0.2     whisker_0.3-2  
-## [17] XML_3.95-0.2    xtable_1.7-1    yaml_2.1.10
+##  [1] codetools_0.2-8    colorspace_1.2-4   dichromat_2.0-0   
+##  [4] digest_0.6.4       evaluate_0.5.1     formatR_0.10      
+##  [7] grid_3.0.2         gtable_0.1.2       httr_0.2          
+## [10] labeling_0.2       markdown_0.6.4     MASS_7.3-29       
+## [13] minqa_1.2.3        munsell_0.4.2      nlme_3.1-111      
+## [16] plyr_1.8           proto_0.3-10       RColorBrewer_1.0-5
+## [19] Rcpp_0.11.0        RCurl_1.95-4.1     scales_0.2.3      
+## [22] splines_3.0.2      stringr_0.6.2      whisker_0.3-2     
+## [25] XML_3.95-0.2       xtable_1.7-1       yaml_2.1.10
 </code></pre>
 
 <pre><code class="r">## Generate this report
