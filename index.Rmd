@@ -1,0 +1,142 @@
+---
+title       : 140.655 Biostat Lab 5
+author      : L. Collado-Torres
+framework   : minimal
+highlighter : prettify
+hitheme     : twitter-bootstrap
+mode        : selfcontained
+github      : {user: lcolladotor, repo: BiostatLab5, branch: gh-pages}
+widgets     : [mathjax, disqus, ganalytics]
+assets:
+  css: 
+    - "http://fonts.googleapis.com/css?family=PT+Sans"
+    - "http://odyniec.net/articles/turning-lists-into-trees/css/tree.css"
+---
+
+```{r setup, echo = F, cache = F}
+require("knitr")
+opts_chunk$set(tidy=TRUE, width=50, echo=FALSE, tidy.opts=list(width.cutoff=50))
+```
+
+
+
+
+
+```{r "citations", echo=FALSE, message=FALSE}
+## Load knitcitations with a clean bibliography
+library("knitcitations")
+cleanbib()
+cite_options(tooltip=TRUE)
+
+## I made my own citing function since citep() doesn't work like I want to with
+## urls that are not really pages themselves like part of a GitHub repo.
+mycitep <- function(x, short=NULL, year=substr(date(), 21, 24), tooltip=TRUE) {
+	res <- tmp <- citep(x)
+	if(!is.null(short)) {
+		res <- gsub("></a>", paste0(">", short, "</a>"), tmp)
+	}		
+	if(tooltip) {
+		res <- gsub("\\?\\?\\?\\?", year, res)
+	}
+	res <- gsub("span> ", "span>", res)
+	res
+}
+
+## Here's an example
+# mycitep("https://github.com/lcolladotor/lcollado753", "Collado, 2013")
+```
+```{r bibsetup, echo=FALSE, message=FALSE, warning=FALSE}
+write.bibtex(c("knitcitations" = citation("knitcitations"), "slidify" = citation("slidify")), file = "pkgs.bib")
+bib <- read.bibtex("pkgs.bib")
+```
+
+This project was done by [Emily Huang](http://www.jhsph.edu/departments/biostatistics/directory/students/phd.html) and [Leonardo Collado-Torres](http://bit.ly/LColladoTorres) for the [140.655 Analysis of Longitudinal Data](http://www.jhsph.edu/courses/course/140.655/01/2013/17988/) laboratory session 5 for biostatistics students.
+
+
+## Instructions
+
+```
+Conduct, using a simulation, a sensitivity analysis of the change in effects
+estimates as a function of the number of quadrature points.
+Consider different integration methods.
+```
+
+As a reference/dataset starting point consider using `r mycitep("10.1111/1467-9876.00237")`.
+
+
+## Theory
+
+Below some of the key theoretical points are shown. For more details, please check out the [presentation](http://lcolladotor.github.io/BiostatLab5/GLMM.pdf).
+
+### General GLMM setup
+
+1) Distribution assumption
+* $Y_{ij}|b_{i}\sim$ Exponential family
+* $Var(Y_{ij}|b_{i})=v\{E(Y_{ij}|b_{i})\}\phi$, where $v$ is a known function
+* $Cov(Y_{ij},Y_{ik}|b_{i})=0$
+
+2) Systematic component
+* $\eta_{ij}=X_{ij}\beta+Z_{ij}b_{i}$
+
+3) Link function
+* $g\{E(Y_{ij}|b_{i})\}=\eta_{ij}=X_{ij}\beta+Z_{ij}b_{i}$ for some known link function, $g$
+
+4) Random effects
+* Assumed to have some probability distribution, such as $b_{i}\sim MVN(0,G)$
+* $b_{i}$ are assumed to be independent of the covariates
+
+
+### Gauss-Hermite Quadrature
+
+$$\int_{-\infty}^{\infty} & h(v)e^{-v^{2}}dv & \approx \sum_{k=1}^{d}h(x_{k})w_{k}$$
+
+* $d$ quadrature points (weights, $w_{k}$, and evaluation points, $x_{k})$
+* The more quadrature points used, the more accurate the approximation
+* But computational burden increases with quadrature points, and grows exponentially with the number of random effects
+
+
+## Simulation
+
+
+
+## References
+
+Web document generated using `slidify` `r mycitep(bib[["slidify"]])`. Citations made with `knitcitations` `r mycitep(bib[["knitcitations"]], "Boettiger, 2013")`. 
+
+
+```{r bibliography, results='asis', echo=FALSE, cache=FALSE}
+## Print bibliography
+bibliography()
+```
+
+
+
+## R code
+
+```{r "code", echo=TRUE, eval=FALSE}
+```
+
+## Reproducibility
+
+This report was last updated on
+
+```{r "date"}
+Sys.time()
+```
+
+R session information:
+
+```{r "reprod"}
+sessionInfo()
+```
+
+```{r slidify, eval=FALSE, echo=TRUE}
+## Generate this report
+library("slidify")
+slidify("index.Rmd")
+```
+
+
+<div id='disqus_thread'></div>
+
+

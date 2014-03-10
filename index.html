@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>140.655 Biostat Lab 5</title>
+    <link rel="stylesheet" href="libraries/frameworks/minimal/stylesheets/styles.css">
+    <link rel="stylesheet" href="libraries/highlighters/prettify/css/twitter-bootstrap.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+        <link rel=stylesheet href="http://fonts.googleapis.com/css?family=PT+Sans"></link>
+<link rel=stylesheet href="http://odyniec.net/articles/turning-lists-into-trees/css/tree.css"></link>
+
+    
+  </head>
+  <body>
+    <div class="wrapper">
+<header>
+  <h1>140.655 Biostat Lab 5</h1>
+  <p></p>
+  <p class="view">
+    <a href="http://github.com/lcolladotor/BiostatLab5">
+     View the Project on GitHub <small>lcolladotor/BiostatLab5</small>
+    </a>
+  </p>
+  <ul class='buttons'>
+    <li><a href="https://github.com/lcolladotor/BiostatLab5/zipball/gh-pages">
+      Download <strong>ZIP File</strong>
+    </a></li>
+    <li><a href="https://github.com/lcolladotor/BiostatLab5/tarball/gh-pages">
+      Download <strong>TAR Ball</strong>
+    </a></li>
+    <li><a href="http://github.com/lcolladotor/BiostatLab5">
+      Fork On <strong>GitHub</strong></a>
+    </li>
+  </ul>
+    <ol>
+    </ol>
+</header>
+
+      <section>
+        
+<p>This project was done by <a href="http://www.jhsph.edu/departments/biostatistics/directory/students/phd.html">Emily Huang</a> and <a href="http://bit.ly/LColladoTorres">Leonardo Collado-Torres</a> for the <a href="http://www.jhsph.edu/courses/course/140.655/01/2013/17988/">140.655 Analysis of Longitudinal Data</a> laboratory session 5 for biostatistics students.</p>
+
+<h2>Instructions</h2>
+
+<pre><code>Conduct, using a simulation, a sensitivity analysis of the change in effects
+estimates as a function of the number of quadrature points.
+Consider different integration methods.
+</code></pre>
+
+<p>As a reference/dataset starting point consider using (<span class="showtooltip" title="Lesaffre E and Spiessens B (2001). 'on The Effect of The Number of Quadrature Points in A Logistic Random Effects Model: an Example.' Journal of The Royal Statistical Society: Series C (Applied Statistics), 50, pp. 325-335. ISSN 0035-9254."><a href="http://dx.doi.org/10.1111/1467-9876.00237">Lesaffre &amp; Spiessens, 2001</a></span>).</p>
+
+<h2>Theory</h2>
+
+<p>Below some of the key theoretical points are shown. For more details, please check out the <a href="http://lcolladotor.github.io/BiostatLab5/GLMM.pdf">presentation</a>.</p>
+
+<h3>General GLMM setup</h3>
+
+<p>1) Distribution assumption</p>
+
+<ul>
+<li>\(Y_{ij}|b_{i}\sim\) Exponential family</li>
+<li>\(Var(Y_{ij}|b_{i})=v\{E(Y_{ij}|b_{i})\}\phi\), where \(v\) is a known function</li>
+<li>\(Cov(Y_{ij},Y_{ik}|b_{i})=0\)</li>
+</ul>
+
+<p>2) Systematic component</p>
+
+<ul>
+<li>\(\eta_{ij}=X_{ij}\beta+Z_{ij}b_{i}\)</li>
+</ul>
+
+<p>3) Link function</p>
+
+<ul>
+<li>\(g\{E(Y_{ij}|b_{i})\}=\eta_{ij}=X_{ij}\beta+Z_{ij}b_{i}\) for some known link function, \(g\)</li>
+</ul>
+
+<p>4) Random effects</p>
+
+<ul>
+<li>Assumed to have some probability distribution, such as \(b_{i}\sim MVN(0,G)\)</li>
+<li>\(b_{i}\) are assumed to be independent of the covariates</li>
+</ul>
+
+<h3>Gauss-Hermite Quadrature</h3>
+
+<p>\[\int_{-\infty}^{\infty} & h(v)e^{-v^{2}}dv & \approx \sum_{k=1}^{d}h(x_{k})w_{k}\]</p>
+
+<ul>
+<li>\(d\) quadrature points (weights, \(w_{k}\), and evaluation points, \(x_{k})\)</li>
+<li>The more quadrature points used, the more accurate the approximation</li>
+<li>But computational burden increases with quadrature points, and grows exponentially with the number of random effects</li>
+</ul>
+
+<h2>Simulation</h2>
+
+<h2>References</h2>
+
+<p>Web document generated using <code>slidify</code> (<span class="showtooltip" title="Vaidyanathan R (2012). slidify: Generate reproducible html5 slides from R markdown. R package version 0.4."><a href="http://ramnathv.github.com/slidify/">Vaidyanathan, 2012</a></span>). Citations made with <code>knitcitations</code> (<span class="showtooltip" title="Boettiger C (2014). knitcitations: Citations for knitr markdown files. R package version 0.5-0."><a href="http://CRAN.R-project.org/package=knitcitations">Boettiger, 2014</a></span>). </p>
+
+<ul>
+<li>Carl Boettiger,   (2014) knitcitations: Citations for knitr markdown files.  <a href="http://CRAN.R-project.org/package=knitcitations">http://CRAN.R-project.org/package=knitcitations</a></li>
+<li>Emmanuel Lesaffre, Bart Spiessens,   (2001) on The Effect of The Number of Quadrature Points in A Logistic Random Effects Model: an Example.  <em>Journal of The Royal Statistical Society: Series C (Applied Statistics)</em>  <strong>50</strong>  325-335  <a href="http://dx.doi.org/10.1111/1467-9876.00237">10.1111/1467-9876.00237</a></li>
+<li>Ramnath Vaidyanathan,   (2012) slidify: Generate reproducible html5 slides from R markdown.  <a href="http://ramnathv.github.com/slidify/">http://ramnathv.github.com/slidify/</a></li>
+</ul>
+
+<h2>R code</h2>
+
+<h2>Reproducibility</h2>
+
+<p>This report was last updated on</p>
+
+<pre><code>## [1] &quot;2014-03-09 20:46:21 EDT&quot;
+</code></pre>
+
+<p>R session information:</p>
+
+<pre><code>## R version 3.0.2 (2013-09-25)
+## Platform: x86_64-apple-darwin10.8.0 (64-bit)
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] knitcitations_0.5-0 bibtex_0.3-6        knitr_1.5          
+## [4] slidify_0.4         lme4_1.0-6          Matrix_1.1-2-2     
+## [7] lattice_0.20-23    
+## 
+## loaded via a namespace (and not attached):
+##  [1] codetools_0.2-8 digest_0.6.4    evaluate_0.5.1  formatR_0.10   
+##  [5] grid_3.0.2      httr_0.2        markdown_0.6.4  MASS_7.3-29    
+##  [9] minqa_1.2.3     nlme_3.1-111    Rcpp_0.11.0     RCurl_1.95-4.1 
+## [13] splines_3.0.2   stringr_0.6.2   tools_3.0.2     whisker_0.3-2  
+## [17] XML_3.95-0.2    xtable_1.7-1    yaml_2.1.10
+</code></pre>
+
+<pre><code class="r">## Generate this report
+library(&quot;slidify&quot;)
+slidify(&quot;index.Rmd&quot;)
+
+</code></pre>
+
+<div id='disqus_thread'></div>
+
+      </section>
+      <footer>
+        <p>Maintained by <a href="http://github.com/lcolladotor">
+          L. Collado-Torres
+        </a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by 
+          <a href="https://github.com/orderedlist">orderedlist</a></small>
+        </p>
+      </footer>    </div>
+    <script src="libraries/frameworks/minimal/javascripts/scale.fix.js"></script>
+  </body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- MathJax: Fall back to local if CDN offline but local image fonts are not supported (saves >100MB) -->
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']],
+        processEscapes: true
+      }
+    });
+  </script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <!-- <script src="https://c328740.ssl.cf1.rackcdn.com/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+  </script> -->
+  <script>window.MathJax || document.write('<script type="text/x-mathjax-config">MathJax.Hub.Config({"HTML-CSS":{imageFont:null}});<\/script><script src="libraries/widgets/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"><\/script>')
+</script>
+<script type="text/javascript">
+    var disqus_shortname = 'biostatlab5';
+    (function() {
+      var dsq = document.createElement('script'); 
+      dsq.type = 'text/javascript'; 
+      dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  
+    ga('create', 'UA-45299226-1', 'lcolladotor.io');
+    ga('send', 'pageview');
+  
+  </script>
+  <!-- Google Prettify -->
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/prettify/188.0.0/prettify.js"></script>
+  <script src='libraries/highlighters/prettify/js/lang-r.js'></script>
+  <script>
+    var pres = document.getElementsByTagName("pre");
+    for (var i=0; i < pres.length; ++i) {
+      pres[i].className = "prettyprint linenums";
+    }
+    prettyPrint();
+  </script>
+  <!-- End Google Prettify --> 
+  </html>
