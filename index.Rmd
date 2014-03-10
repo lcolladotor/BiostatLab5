@@ -297,7 +297,7 @@ p6
 
 ```{r "save"}
 ## Save the plots for using them in the presentation
-save(p1, p2, p3, p4, p5, p6, file="plots.Rdata")
+save(p1, p2, p3, p4, p5, p6, eda1, eda2, file="plots.Rdata")
 
 ```
 
