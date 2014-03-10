@@ -63,7 +63,7 @@ Below some of the key theoretical points are shown. For more details, please che
 
 ### Gauss-Hermite Quadrature
 
-$$\int_{-\infty}^{\infty} & h(v)e^{-v^{2}}dv & \approx \sum_{k=1}^{d}h(x_{k})w_{k}$$
+$$ \int_{-\infty}^{\infty} h(v)e^{-v^{2}}dv \approx \sum_{k=1}^{d}h(x_{k})w_{k} $$
 
 * $d$ quadrature points (weights, $w_{k}$, and evaluation points, $x_{k})$
 * The more quadrature points used, the more accurate the approximation
@@ -134,7 +134,6 @@ R session information:
 ## Generate this report
 library("slidify")
 slidify("index.Rmd")
-
 ```
 
 
